@@ -1,12 +1,11 @@
 # -*- coding:utf-8 -*-
-import random
+import random, pickle
 
 '''
 1. Подстановка
 2. Перестановка
 3. Гамирование (шифр Виженера)
 '''
-
 
 
 class Substitution_cipher():
@@ -33,6 +32,8 @@ class Substitution_cipher():
 
     def encrypt(self, data):
         self.key_generator2()
+        with open('./sub.key', 'wb') as f:
+            pickle.dump(self.key_map, f)
         encrypt_data = b""
         for s in data:
             encrypt_data += bytes([self.key_map[s]])
@@ -70,6 +71,8 @@ class Transposition_cipher():
 
     def encrypt(self, data):
         self.key_generator(data)
+        with open('./tr.key', 'wb') as f:
+            pickle.dump(self.key_map, f)
         self.len_ = len(data)
         encrypt_data = b""
         if len(data) % self.i != 0:
@@ -86,7 +89,8 @@ class Transposition_cipher():
         decrypt_data = b""
         key_reverse = {v: k for k, v in self.key_map.items()}
         for s in range(len(data)):
-            decrypt_data += bytes([data[int(s/len(key_reverse))*len(key_reverse) + key_reverse[s % len(key_reverse)]]])
+            decrypt_data += bytes(
+                    [data[int(s / len(key_reverse)) * len(key_reverse) + key_reverse[s % len(key_reverse)]]])
         return decrypt_data[:self.len_:]
 
 
@@ -112,6 +116,8 @@ class Vigenere_cipher():
     def encrypt(self, data):
         self.len_ = len(data)
         self.key_generator()
+        with open('./vz.key', 'wb') as f:
+            pickle.dump(self.key_string, f)
         return self.xor_strings(data, "enc")
 
     def decrypt(self, data, key_string):
@@ -123,23 +129,38 @@ class Shift_cipher():
     key_list = []
     len_ = 0
 
+    @staticmethod
+    def shifte(char, l):
+        bin_char = "0" * (8 - len(bin(char)[2::])) + bin(char)[2::]
+        print(bin_char, " => ", bin_char[l:8:1] + bin_char[0:l:1], " => ",
+              str(bin_char[l:8:1] + bin_char[0:l:1])[8-l:8:1] + str(bin_char[l:8:1] + bin_char[0:l:1])[0:8-l:1])
+        return int(bin_char[l:8:1] + bin_char[0:l:1], 2)
+
+    @staticmethod
+    def shiftd(char, l):
+        bin_char = "0" * (8 - len(bin(char)[2::])) + bin(char)[2::]
+        # print(bin_char, " => ", bin_char[l:8:1]+bin_char[0:l:1], " => ", bin_char[0:l:1]+bin_char[l:8:1])
+        return int(bin_char[l:8:1] + bin_char[0:l:1], 2)
+
     def key_generator(self):
-        self.key_list = [int(random.uniform(0, 7)) for i in range(int(random.uniform(2, self.len_)))]
+        self.key_list = [int(random.uniform(0, 8)) for i in range(int(random.uniform(2, 100)))]
 
     def encrypt(self, data):
         self.len_ = len(data)
         self.key_generator()
-        if self.len_ % len(self.key_list) != 0:
-            data += b" " * (len(self.key_list) - (self.len_ % len(self.key_list)))
+        with open('./shift.key', 'wb') as f:
+            pickle.dump(self.key_list, f)
+        encrypt_data = b""
         for i in range(self.len_):
-            data[i] = bytes([bin(data[i]) << self.key_list[i % len(self.key_list)] | bin(data[i]) << 7 - self.key_list[i % len(self.key_list)]])
-        return data
+            encrypt_data += bytes([self.shifte(data[i], self.key_list[i % len(self.key_list)])])
+        return encrypt_data
 
     def decrypt(self, data, key_list):
         self.key_list = key_list
+        decrypt_data = b""
         for i in range(self.len_):
-            data[i] = bytes([bin(data[i]) << 7 - self.key_list[i % len(self.key_list)] | bin(data[i]) << self.key_list[i % len(self.key_list)]])
-        return data[:self.len_:]
+            decrypt_data += bytes([self.shiftd(data[i], 8 - self.key_list[i % len(self.key_list)])])
+        return decrypt_data[:self.len_:]
 
 
 def Test_Substitution(name, data):
@@ -162,9 +183,6 @@ def Test_Substitution(name, data):
     file.close()
 
     print("Key =", sub_ciph.key_map)
-    file = open("./sub.key." + name, "w")
-    file.write(str(sub_ciph.key_map))
-    file.close()
 
 
 def Test_Transposition(name, data):
@@ -187,9 +205,6 @@ def Test_Transposition(name, data):
     file.close()
 
     print("Key =", tr_ciph.key_map)
-    file = open("./tr.key." + name, "w")
-    file.write(str(tr_ciph.key_map))
-    file.close()
 
 
 def Test_Vigener(name, data):
@@ -212,9 +227,6 @@ def Test_Vigener(name, data):
     file.close()
 
     print("Key =", vz_ciph.key_string)
-    file = open("./vz.key." + name, "wb")
-    file.write(vz_ciph.key_string)
-    file.close()
 
 
 def Test_Shift(name, data):
@@ -231,21 +243,18 @@ def Test_Shift(name, data):
     file.write(vz_ciph.encrypt(data))
     file.close()
 
-    print("Decrypt :", vz_ciph.decrypt(vz_ciph.encrypt(data), vz_ciph.key_string))
+    print("Decrypt :", vz_ciph.decrypt(vz_ciph.encrypt(data), vz_ciph.key_list))
     file = open("./shift.dec." + name, "wb")
-    file.write(vz_ciph.decrypt(vz_ciph.encrypt(data), vz_ciph.key_string))
+    file.write(vz_ciph.decrypt(vz_ciph.encrypt(data), vz_ciph.key_list))
     file.close()
 
-    print("Key =", vz_ciph.key_string)
-    file = open("./shift.key." + name, "wb")
-    file.write(vz_ciph.key_string)
-    file.close()
+    print("Key =", vz_ciph.key_list)
 
 
 def main():
-    name = input("Input path file: ")
-    if name == "":
-        name = "qe.xlsx"
+    # name = input("Input path file: ")
+    # if name == "":
+    name = "qe.xlsx"
     data = open("./" + name, "rb").read()
     Test_Substitution(name, data)
     Test_Transposition(name, data)
