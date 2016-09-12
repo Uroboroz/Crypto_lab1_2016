@@ -49,6 +49,7 @@ class Substitution_cipher():
 class Transposition_cipher():
     key_map = {}
     i = 0
+    len_ = 0
 
     @staticmethod
     def random_list(list_):
@@ -59,11 +60,16 @@ class Transposition_cipher():
         return ret
 
     def key_generator(self, data):
-        self.i = int(random.uniform(5, len(data) - 1))
+        if 100 > len(data) - 1:
+            n = len(data) - 1
+        else:
+            n = 100
+        self.i = int(random.uniform(5, n))
         self.key_map = dict(zip(self.random_list(list(range(self.i))), self.random_list(list(range(self.i)))))
 
     def encrypt(self, data):
         self.key_generator(data)
+        self.len_ = len(data)
         encrypt_data = b""
         if len(data) % self.i != 0:
             data += b" " * (self.i - len(data) % self.i)
@@ -78,36 +84,38 @@ class Transposition_cipher():
         self.key_map = key_map
         decrypt_data = b""
         key_reverse = {v: k for k, v in self.key_map.items()}
-        for s in range(0, len(data), self.i):
-            temp = b""
-            for i in range(self.i):
-                temp += bytes([data[s + key_reverse[i]]])
-            decrypt_data += temp
-        return decrypt_data[:len(decrypt_data) - self.i:]
+        for s in range(len(data)):
+            decrypt_data += bytes([data[int(s/len(key_reverse))*len(key_reverse) + key_reverse[s % len(key_reverse)]]])
+        return decrypt_data[:self.len_:]
 
 
 class Vigenere_cipher():
     key_string = b""
+    len_ = 0
 
-    def xor_strings(self, xs, ys):
+    def xor_strings(self, xs, mode):
         if len(xs) % len(self.key_string) != 0:
-            xs += b" " * (len(self.key_string) - len(xs) % len(self.key_string))
+            xs += b" " * (len(self.key_string) - (len(xs) % len(self.key_string)))
         result = b""
-        for i in range(len(ys)):
-            result += bytes([xs[i] ^ ys[i]])
-        return result
+        for i in range(len(xs)):
+            result += bytes([xs[i] ^ self.key_string[i % len(self.key_string)]])
+        if mode == "dec":
+            return result[:self.len_:]
+        else:
+            return result
 
-    def key_generator(self, data):
+    def key_generator(self):
         self.key_string = b"".join(
-                [bytes([int(random.uniform(0, 256))]) for i in range(int(random.uniform(2, len(data))))])
-        return self.key_string
+                [bytes([int(random.uniform(0, 256))]) for i in range(int(random.uniform(2, self.len_)))])
 
     def encrypt(self, data):
-        return self.xor_strings(data, self.key_generator(data))
+        self.len_ = len(data)
+        self.key_generator()
+        return self.xor_strings(data, "enc")
 
     def decrypt(self, data, key_string):
         self.key_string = key_string
-        return self.xor_strings(data, self.key_string).strip()
+        return self.xor_strings(data, "dec")
 
 
 def Test_Substitution(name, data):
