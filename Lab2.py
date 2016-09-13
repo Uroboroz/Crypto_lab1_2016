@@ -133,8 +133,8 @@ class Shift_cipher():
     @staticmethod
     def shifte(char, l):
         bin_char = "0" * (8 - len(bin(char)[2::])) + bin(char)[2::]
-        print(bin_char, " => ", bin_char[l:8:1] + bin_char[0:l:1], " => ",
-              str(bin_char[l:8:1] + bin_char[0:l:1])[8-l:8:1] + str(bin_char[l:8:1] + bin_char[0:l:1])[0:8-l:1])
+        '''print(bin_char, " => ", bin_char[l:8:1] + bin_char[0:l:1], " => ",
+              str(bin_char[l:8:1] + bin_char[0:l:1])[8 - l:8:1] + str(bin_char[l:8:1] + bin_char[0:l:1])[0:8 - l:1])'''
         return int(bin_char[l:8:1] + bin_char[0:l:1], 2)
 
     @staticmethod
@@ -261,6 +261,32 @@ def main():
     Test_Transposition(name, data)
     Test_Vigener(name, data)
     Test_Shift(name, data)
+
+    print("Data:      ", data)
+
+    sub = Substitution_cipher()
+    tr = Transposition_cipher()
+    vz = Vigenere_cipher()
+    sh = Shift_cipher()
+    sub1 = Substitution_cipher()
+    tr1 = Transposition_cipher()
+    vz1 = Vigenere_cipher()
+    sh1 = Shift_cipher()
+    sub2 = Substitution_cipher()
+    tr2 = Transposition_cipher()
+    vz2 = Vigenere_cipher()
+    sh2 = Shift_cipher()
+
+    en_data = sh2.encrypt(vz2.encrypt(tr2.encrypt(sub2.encrypt(
+            sh1.encrypt(
+                    vz1.encrypt(tr1.encrypt(sub1.encrypt(sh.encrypt(vz.encrypt(tr.encrypt(sub.encrypt(data))))))))))))
+    print("Encrypto : ", en_data)
+    print("Decrypto : ", sub.decrypt(tr.decrypt(vz.decrypt(sh.decrypt(
+            sub1.decrypt(tr1.decrypt(
+                    vz1.decrypt(sh1.decrypt(
+                            sub2.decrypt(tr2.decrypt(vz2.decrypt(sh2.decrypt(en_data, sh2.key_list), vz2.key_string),
+                                         tr2.key_map), sub2.key_map), sh1.key_list), vz1.key_string), tr1.key_map),
+            sub1.key_map), sh.key_list), vz.key_string), tr.key_map), sub.key_map))
 
 
 main()
