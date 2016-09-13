@@ -9,12 +9,14 @@ import random, pickle
 4. Шифрование циклическим побитовым сдвигом
 '''
 
+"""
+    ###########################################
+    #                                         #
+    #             CLASSES CIPHERS             #
+    #                                         #
+    ###########################################
+                                                  """
 
-###########################################
-#                                         #
-#             CLASSES CIPHERS             #
-#                                         #
-###########################################
 
 class Substitution_cipher():
     key_map = {}
@@ -291,17 +293,21 @@ def Test_Shift(name, data):
     print("Key =", vz_ciph.key_list)
 
 
+def xor_string(hs, data):
+    return b"".join([bytes([data[i % len(data)] ^ hs[i]]) for i in range(len(hs))])
+
+
 def main():
     # name = input("Input path file: ")
     # if name == "":
     name = "qe.xlsx"
     data = open("./" + name, "rb").read()
-    Test_Substitution(name, data)
-    Test_Transposition(name, data)
-    Test_Vigener(name, data)
-    Test_Shift(name, data)
+    # Test_Substitution(name, data)
+    # Test_Transposition(name, data)
+    # Test_Vigener(name, data)
+    # Test_Shift(name, data)
 
-    print("\nData:      ", data)
+    print("\nData:     ", data)
 
     sub = Substitution_cipher()
     tr = Transposition_cipher()
@@ -318,17 +324,81 @@ def main():
     vz2 = Vigenere_cipher()
     sh2 = Shift_cipher()
 
-    en_data = sh2.encrypt(vz2.encrypt(tr2.encrypt(sub2.encrypt(
+    '''en_data = sh2.encrypt(vz2.encrypt(tr2.encrypt(sub2.encrypt(
             sh1.encrypt(vz1.encrypt(tr1.encrypt(sub1.encrypt(sh.encrypt(
                     vz.encrypt(tr.encrypt(sub.encrypt(data, "./sub.key"), "./tr.key", 0), "./vz.key", 0), "./shift.key",
                     0),
                     "./sub1.key"), "./tr1.key", 0), "./vz1.key", 0), "./shift1.key", 0), "./sub2.key"), "./tr2.key", 0),
             "./vz2.key", 0), "./shift2.key", 0)
-    print("Encrypto : ", en_data)
-    print("Decrypto : ", sub.decrypt(tr.decrypt(vz.decrypt(sh.decrypt(sub1.decrypt(tr1.decrypt(vz1.decrypt(sh1.decrypt(
+    print("Encrypt : ", en_data)
+    print("Decrypt : ", sub.decrypt(tr.decrypt(vz.decrypt(sh.decrypt(sub1.decrypt(tr1.decrypt(vz1.decrypt(sh1.decrypt(
             sub2.decrypt(tr2.decrypt(vz2.decrypt(sh2.decrypt(en_data, sh2.key_list), vz2.key_string), tr2.key_map),
                          sub2.key_map), sh1.key_list), vz1.key_string), tr1.key_map), sub1.key_map), sh.key_list),
-            vz.key_string), tr.key_map), sub.key_map))
+            vz.key_string), tr.key_map), sub.key_map))'''
+
+    # size_block = int(input("Size block = "))
+    size_block = 16
+    dop = size_block - (len(data) % size_block)
+
+    en_data = b""
+    de_data = b""
+    h = b"0" * size_block
+    h_original = b"0" * size_block
+    data += b" " * dop
+
+    for i in range(0, len(data), size_block):
+        en_data += sh2.encrypt(vz2.encrypt(tr2.encrypt(sub2.encrypt(
+                sh1.encrypt(vz1.encrypt(tr1.encrypt(sub1.encrypt(sh.encrypt(
+                        vz.encrypt(
+                                tr.encrypt(sub.encrypt(data[i:i + size_block:1], "./sub.key"), "./tr.key", size_block),
+                                "./vz.key",
+                                size_block), "./shift.key", size_block), "./sub1.key"), "./tr1.key", size_block),
+                        "./vz1.key", size_block), "./shift1.key", size_block), "./sub2.key"), "./tr2.key", size_block),
+                "./vz2.key", size_block), "./shift2.key", size_block)
+
+        h = xor_string(sh2.encrypt(vz2.encrypt(tr2.encrypt(sub2.encrypt(
+                sh1.encrypt(vz1.encrypt(tr1.encrypt(sub1.encrypt(sh.encrypt(
+                        vz.encrypt(
+                                tr.encrypt(sub.encrypt(xor_string(data[i:i + size_block:1], h), "./sub.key"),
+                                           "./tr.key",
+                                           size_block), "./vz.key",
+                                size_block), "./shift.key", size_block), "./sub1.key"), "./tr1.key", size_block),
+                        "./vz1.key", size_block), "./shift1.key", size_block), "./sub2.key"), "./tr2.key", size_block),
+                "./vz2.key", size_block), "./shift2.key", size_block), data[i:i + size_block:1])
+
+    en_data += h
+    print("Encrypt : ", en_data)
+
+    h = en_data[len(en_data) - size_block::]
+
+    for i in range(len(en_data) - size_block, 0, -1 * size_block):
+        block = sub.decrypt(tr.decrypt(vz.decrypt(sh.decrypt(sub1.decrypt(tr1.decrypt(vz1.decrypt(sh1.decrypt(
+                sub2.decrypt(
+                        tr2.decrypt(vz2.decrypt(sh2.decrypt(en_data[i - size_block:i:1], sh2.key_list), vz2.key_string),
+                                    tr2.key_map), sub2.key_map), sh1.key_list), vz1.key_string), tr1.key_map),
+                sub1.key_map),
+                sh.key_list), vz.key_string), tr.key_map), sub.key_map)
+
+        h = xor_string(sub.decrypt(tr.decrypt(vz.decrypt(sh.decrypt(sub1.decrypt(tr1.decrypt(vz1.decrypt(sh1.decrypt(
+            sub2.decrypt(tr2.decrypt(
+                vz2.decrypt(sh2.decrypt(xor_string(block, h), sh2.key_list), vz2.key_string),
+                tr2.key_map), sub2.key_map), sh1.key_list), vz1.key_string), tr1.key_map), sub1.key_map), sh.key_list),
+                                                         vz.key_string), tr.key_map), sub.key_map), block)
+
+    if h != h_original:
+        print("File is corrupt!")
+        return 0
+    else:
+        print("File is not corrupt!")
+        for i in range(0, len(en_data) - size_block, size_block):
+            de_data += sub.decrypt(tr.decrypt(vz.decrypt(sh.decrypt(sub1.decrypt(tr1.decrypt(vz1.decrypt(sh1.decrypt(
+                    sub2.decrypt(
+                            tr2.decrypt(vz2.decrypt(sh2.decrypt(en_data[i:i + size_block:1], sh2.key_list), vz2.key_string),
+                                        tr2.key_map),
+                            sub2.key_map), sh1.key_list), vz1.key_string), tr1.key_map), sub1.key_map), sh.key_list),
+                    vz.key_string), tr.key_map), sub.key_map)
+
+        print("Decrypt : ", de_data[:len(de_data) - dop:])
 
 
 main()
