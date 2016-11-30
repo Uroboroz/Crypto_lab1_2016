@@ -336,8 +336,8 @@ def main():
                          sub2.key_map), sh1.key_list), vz1.key_string), tr1.key_map), sub1.key_map), sh.key_list),
             vz.key_string), tr.key_map), sub.key_map))'''
 
-    # size_block = int(input("Size block = "))
-    size_block = 16
+    size_block = int(input("Size block = "))
+    #size_block = 16
     dop = size_block - (len(data) % size_block)
 
     en_data = b""

@@ -9,6 +9,7 @@ import random
 
 
 class Substitution_cipher():
+
     key_map = {}
 
     @staticmethod
